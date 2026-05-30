@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="SLワークアウト">
+  <meta name="theme-color" content="#00aaff">
+  <title>SoloLeveling Workout</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --sl-bg: #06090f;
+      --sl-surface: #0d1420;
+      --sl-surface2: #111927;
+      --sl-border: #1e3a5f;
+      --sl-blue: #0af;
+      --sl-blue-dim: rgba(0,170,255,0.12);
+      --sl-blue-mid: rgba(0,170,255,0.35);
+      --sl-purple: #8b5cf6;
+      --sl-purple-dim: rgba(139,92,246,0.12);
+      --sl-gold: #f59e0b;
+      --sl-gold-dim: rgba(245,158,11,0.15);
+      --sl-text: #e2e8f0;
+      --sl-muted: #64748b;
+      --sl-danger: #ef4444;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; overflow: hidden; }
+    #app {
+      background: var(--sl-bg);
+      color: var(--sl-text);
+      font-family: 'Rajdhani', sans-serif;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+    .bg-grid {
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,170,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,170,255,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .main-wrap {
+      position: relative;
+      z-index: 1;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* HEADER */
+    .header {
+      padding: 16px 16px 10px;
+      border-bottom: 1px solid var(--sl-border);
+      background: linear-gradient(180deg, rgba(0,170,255,0.04) 0%, transparent 100%);
+      flex-shrink: 0;
+    }
+    .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .player-name { font-family: 'Cinzel', serif; font-size: 14px; font-weight: 700; color: var(--sl-blue); letter-spacing: 0.1em; }
+    .player-title { font-size: 11px; color: var(--sl-muted); letter-spacing: 0.05em; margin-top: 2px; }
+    .rank-badge {
+      background: var(--sl-gold-dim); border: 1px solid var(--sl-gold);
+      color: var(--sl-gold); font-size: 11px; font-weight: 700;
+      letter-spacing: 0.15em; padding: 3px 10px; border-radius: 3px;
+      font-family: 'Cinzel', serif;
+    }
+    .level-row { display: flex; align-items: center; gap: 12px; }
+    .level-block { }
+    .level-label { font-size: 10px; color: var(--sl-muted); letter-spacing: 0.1em; text-transform: uppercase; }
+    .level-num { font-family: 'Cinzel', serif; font-size: 30px; font-weight: 900; color: #fff; line-height: 1; }
+    .exp-section { flex: 1; }
+    .exp-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--sl-muted); margin-bottom: 4px; }
+    .exp-bar-bg { height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; }
+    .exp-bar-fill {
+      height: 100%; background: linear-gradient(90deg, #0066bb, var(--sl-blue));
+      border-radius: 3px; transition: width 0.6s ease;
+      box-shadow: 0 0 6px var(--sl-blue);
+    }
+
+    /* TABS */
+    .nav-tabs { display: flex; border-bottom: 1px solid var(--sl-border); flex-shrink: 0; }
+    .tab-btn {
+      flex: 1; padding: 10px 4px; background: none; border: none;
+      border-bottom: 2px solid transparent; color: var(--sl-muted);
+      font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 600;
+      letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; transition: all 0.2s;
+    }
+    .tab-btn.active { color: var(--sl-blue); border-bottom-color: var(--sl-blue); }
+
+    /* SCROLL AREA */
+    .scroll-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 14px 16px 20px; }
+
+    /* SECTIONS */
+    .section { display: none; }
+    .section.active { display: block; }
+
+    /* QUEST */
+    .quest-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+    .quest-badge {
+      background: var(--sl-purple-dim); border: 1px solid var(--sl-purple);
+      color: var(--sl-purple); font-size: 10px; font-weight: 700;
+      letter-spacing: 0.1em; padding: 2px 8px; border-radius: 2px; font-family: 'Cinzel', serif;
+    }
+    .quest-title-label { font-family: 'Cinzel', serif; font-size: 12px; color: var(--sl-text); letter-spacing: 0.05em; }
+    .daily-quest {
+      background: var(--sl-surface); border: 1px solid var(--sl-border);
+      border-radius: 4px; padding: 14px; margin-bottom: 10px;
+      position: relative; overflow: hidden; cursor: pointer; transition: border-color 0.2s;
+    }
+    .daily-quest::after {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+      width: 3px; background: var(--sl-blue);
+    }
+    .daily-quest.completed::after { background: #22c55e; }
+    .quest-name { font-size: 15px; font-weight: 700; color: var(--sl-text); margin-bottom: 8px; padding-left: 10px; }
+    .daily-quest.completed .quest-name { color: var(--sl-muted); text-decoration: line-through; }
+    .quest-exercises { padding-left: 10px; display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+    .exercise-row { display: flex; justify-content: space-between; align-items: center; }
+    .exercise-name { font-size: 13px; color: var(--sl-muted); }
+    .exercise-target { font-size: 13px; font-weight: 600; color: var(--sl-blue); letter-spacing: 0.05em; }
+    .daily-quest.completed .exercise-name,
+    .daily-quest.completed .exercise-target { color: #374151; }
+    .quest-reward { padding-left: 10px; display: flex; align-items: center; gap: 6px; }
+    .reward-label { font-size: 11px; color: var(--sl-muted); }
+    .reward-exp { font-size: 12px; font-weight: 700; color: var(--sl-gold); }
+    .complete-btn {
+      width: 100%; background: var(--sl-blue-dim); border: 1px solid var(--sl-blue);
+      color: var(--sl-blue); font-family: 'Rajdhani', sans-serif; font-size: 13px;
+      font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+      padding: 8px; border-radius: 3px; cursor: pointer; margin-top: 10px; transition: all 0.2s;
+    }
+    .complete-btn:active { background: rgba(0,170,255,0.25); }
+    .daily-quest.completed .complete-btn {
+      background: rgba(34,197,94,0.1); border-color: #22c55e; color: #22c55e; pointer-events: none;
+    }
+
+    /* STATUS */
+    .status-window {
+      background: var(--sl-surface); border: 1px solid var(--sl-border);
+      border-radius: 4px; padding: 14px; margin-bottom: 14px; position: relative; overflow: hidden;
+    }
+    .status-window::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, var(--sl-purple), var(--sl-blue));
+    }
+    .status-title { font-family: 'Cinzel', serif; font-size: 13px; color: var(--sl-blue); letter-spacing: 0.12em; margin-bottom: 14px; }
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .stat-item { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); border-radius: 3px; padding: 10px; }
+    .stat-name { font-size: 10px; color: var(--sl-muted); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 4px; }
+    .stat-bar-wrap { display: flex; align-items: center; gap: 8px; }
+    .stat-bar-bg { flex: 1; height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden; }
+    .stat-bar-fill { height: 100%; border-radius: 2px; transition: width 0.5s ease; }
+    .stat-val { font-size: 13px; font-weight: 700; min-width: 28px; text-align: right; color: #fff; }
+
+    /* CHART */
+    .chart-wrap { background: var(--sl-surface); border: 1px solid var(--sl-border); border-radius: 4px; padding: 14px; margin-bottom: 14px; }
+    .chart-label { font-size: 11px; color: var(--sl-muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 12px; }
+    .chart-bars { display: flex; align-items: flex-end; gap: 6px; height: 80px; }
+    .chart-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
+    .chart-bar { width: 100%; border-radius: 2px 2px 0 0; background: var(--sl-blue-dim); border-top: 2px solid var(--sl-blue); min-height: 4px; }
+    .chart-day { font-size: 10px; color: var(--sl-muted); }
+
+    /* HISTORY */
+    .history-item {
+      background: var(--sl-surface); border: 1px solid var(--sl-border);
+      border-radius: 4px; padding: 12px 14px; margin-bottom: 8px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .history-date { font-size: 11px; color: var(--sl-muted); margin-bottom: 3px; }
+    .history-name { font-size: 15px; font-weight: 600; color: var(--sl-text); }
+    .history-exp-badge {
+      background: var(--sl-gold-dim); border: 1px solid rgba(245,158,11,0.4);
+      color: var(--sl-gold); font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 3px;
+    }
+    .empty-history { text-align: center; color: var(--sl-muted); padding: 40px 0; font-size: 14px; line-height: 2; }
+
+    /* TOAST */
+    .toast {
+      position: fixed; top: 16px; left: 50%; transform: translateX(-50%) translateY(-100px);
+      background: var(--sl-surface2); border: 1px solid var(--sl-blue);
+      color: var(--sl-blue); font-family: 'Cinzel', serif; font-size: 12px;
+      font-weight: 700; letter-spacing: 0.1em; padding: 10px 20px; border-radius: 3px;
+      z-index: 999; transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1); pointer-events: none; white-space: nowrap;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+<div id="app">
+  <div class="bg-grid"></div>
+  <div class="main-wrap">
+    <div class="toast" id="toast"></div>
+
+    <!-- HEADER -->
+    <div class="header">
+      <div class="header-top">
+        <div>
+          <div class="player-name">Sung Jin-Woo</div>
+          <div class="player-title">SHADOW MONARCH</div>
+        </div>
+        <div class="rank-badge" id="rankBadge">RANK E</div>
+      </div>
+      <div class="level-row">
+        <div class="level-block">
+          <div class="level-label">LEVEL</div>
+          <div class="level-num" id="levelNum">1</div>
+        </div>
+        <div class="exp-section">
+          <div class="exp-label">
+            <span>EXP</span>
+            <span id="expText">0 / 1000</span>
+          </div>
+          <div class="exp-bar-bg">
+            <div class="exp-bar-fill" id="expBar" style="width:0%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="nav-tabs">
+      <button class="tab-btn active" onclick="switchTab('quest',this)">クエスト</button>
+      <button class="tab-btn" onclick="switchTab('status',this)">ステータス</button>
+      <button class="tab-btn" onclick="switchTab('history',this)">戦歴</button>
+    </div>
+
+    <!-- SCROLL AREA -->
+    <div class="scroll-area">
+
+      <!-- QUEST TAB -->
+      <div class="section active" id="tab-quest">
+        <div class="quest-header">
+          <div class="quest-badge">DAILY</div>
+          <div class="quest-title-label">本日のクエスト</div>
+        </div>
+        <div class="daily-quest" id="quest-0">
+          <div class="quest-name">下半身の試練</div>
+          <div class="quest-exercises">
+            <div class="exercise-row"><span class="exercise-name">スクワット</span><span class="exercise-target">×30</span></div>
+            <div class="exercise-row"><span class="exercise-name">ランジ</span><span class="exercise-target">×20（各脚）</span></div>
+            <div class="exercise-row"><span class="exercise-name">カーフレイズ</span><span class="exercise-target">×50</span></div>
+          </div>
+          <div class="quest-reward"><span class="reward-label">報酬:</span><span class="reward-exp">+200 EXP</span></div>
+          <button class="complete-btn" onclick="completeQuest(0,200,'下半身の試練')">クリア！</button>
+        </div>
+        <div class="daily-quest" id="quest-1">
+          <div class="quest-name">上半身の覚醒</div>
+          <div class="quest-exercises">
+            <div class="exercise-row"><span class="exercise-name">腕立て伏せ</span><span class="exercise-target">×20</span></div>
+            <div class="exercise-row"><span class="exercise-name">パイクプッシュアップ</span><span class="exercise-target">×15</span></div>
+            <div class="exercise-row"><span class="exercise-name">ディップス</span><span class="exercise-target">×12</span></div>
+          </div>
+          <div class="quest-reward"><span class="reward-label">報酬:</span><span class="reward-exp">+180 EXP</span></div>
+          <button class="complete-btn" onclick="completeQuest(1,180,'上半身の覚醒')">クリア！</button>
+        </div>
+        <div class="daily-quest" id="quest-2">
+          <div class="quest-name">核心部の強化</div>
+          <div class="quest-exercises">
+            <div class="exercise-row"><span class="exercise-name">プランク</span><span class="exercise-target">60秒</span></div>
+            <div class="exercise-row"><span class="exercise-name">クランチ</span><span class="exercise-target">×25</span></div>
+            <div class="exercise-row"><span class="exercise-name">レッグレイズ</span><span class="exercise-target">×15</span></div>
+          </div>
+          <div class="quest-reward"><span class="reward-label">報酬:</span><span class="reward-exp">+150 EXP</span></div>
+          <button class="complete-btn" onclick="completeQuest(2,150,'核心部の強化')">クリア！</button>
+        </div>
+      </div>
+
+      <!-- STATUS TAB -->
+      <div class="section" id="tab-status">
+        <div class="status-window">
+          <div class="status-title">Player Status</div>
+          <div class="stats-grid" id="statsGrid"></div>
+        </div>
+        <div class="chart-wrap">
+          <div class="chart-label">Weekly Activity</div>
+          <div class="chart-bars" id="chartBars"></div>
+        </div>
+      </div>
+
+      <!-- HISTORY TAB -->
+      <div class="section" id="tab-history">
+        <div id="historyList">
+          <div class="empty-history">クエストをクリアすると<br>ここに記録されます</div>
+        </div>
+      </div>
+
+    </div><!-- /scroll-area -->
+  </div><!-- /main-wrap -->
+</div><!-- /app -->
+
+<script>
+  // Service Worker登録
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js');
+  }
+
+  // --- State ---
+  const STORAGE_KEY = 'sl_workout_state';
+  const ranks = ['E','D','C','B','A','S','SS','SSS'];
+  const statColors = { STR:'#ef4444', AGI:'#f59e0b', VIT:'#22c55e', INT:'#8b5cf6', SEN:'#0af', LUK:'#f472b6' };
+
+  function defaultState() {
+    return {
+      level: 1,
+      exp: 0,
+      expMax: 1000,
+      stats: { STR:12, AGI:9, VIT:8, INT:7, SEN:10, LUK:6 },
+      completed: [false, false, false],
+      lastDate: today(),
+      history: [],
+      weekActivity: [0,0,0,0,0,0,0]
+    };
+  }
+
+  function today() {
+    const d = new Date();
+    return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();
+  }
+
+  function loadState() {
+    try {
+      const s = localStorage.getItem(STORAGE_KEY);
+      if (!s) return defaultState();
+      const st = JSON.parse(s);
+      // 日付が変わったらクエストリセット
+      if (st.lastDate !== today()) {
+        st.completed = [false, false, false];
+        st.lastDate = today();
+        // 週次アクティビティをずらす
+        const dayIdx = new Date().getDay();
+        const idx = dayIdx === 0 ? 6 : dayIdx - 1;
+        st.weekActivity = [0,0,0,0,0,0,0];
+      }
+      return st;
+    } catch(e) { return defaultState(); }
+  }
+
+  function saveState() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }
+
+  let state = loadState();
+
+  // --- Render ---
+  function getStatMax(n) { return n==='STR'?40:n==='AGI'?35:n==='VIT'?30:25; }
+
+  function renderHeader() {
+    document.getElementById('levelNum').textContent = state.level;
+    document.getElementById('expText').textContent = state.exp + ' / ' + state.expMax;
+    document.getElementById('expBar').style.width = Math.round((state.exp/state.expMax)*100)+'%';
+    const rankIdx = Math.min(Math.floor((state.level-1)/3), ranks.length-1);
+    document.getElementById('rankBadge').textContent = 'RANK '+ranks[rankIdx];
+  }
+
+  function renderQuests() {
+    state.completed.forEach((done, i) => {
+      const el = document.getElementById('quest-'+i);
+      if (!el) return;
+      const btn = el.querySelector('.complete-btn');
+      if (done) {
+        el.classList.add('completed');
+        btn.textContent = 'CLEARED ✓';
+      } else {
+        el.classList.remove('completed');
+        btn.textContent = 'クリア！';
+      }
+    });
+  }
+
+  function renderStats() {
+    const grid = document.getElementById('statsGrid');
+    grid.innerHTML = '';
+    Object.entries(state.stats).forEach(([name, val]) => {
+      const max = getStatMax(name);
+      const pct = Math.round((val/max)*100);
+      const color = statColors[name];
+      grid.innerHTML += `<div class="stat-item">
+        <div class="stat-name">${name}</div>
+        <div class="stat-bar-wrap">
+          <div class="stat-bar-bg"><div class="stat-bar-fill" style="width:${pct}%;background:${color};"></div></div>
+          <div class="stat-val" style="color:${color};">${val}</div>
+        </div>
+      </div>`;
+    });
+  }
+
+  function renderChart() {
+    const wrap = document.getElementById('chartBars');
+    const days = ['月','火','水','木','金','土','日'];
+    const maxVal = Math.max(...state.weekActivity, 1);
+    const todayIdx = (() => { const d = new Date().getDay(); return d===0?6:d-1; })();
+    wrap.innerHTML = '';
+    state.weekActivity.forEach((v, i) => {
+      const h = Math.round((v/maxVal)*72);
+      const isToday = i===todayIdx;
+      wrap.innerHTML += `<div class="chart-col">
+        <div class="chart-bar" style="height:${Math.max(h,4)}px;${isToday?'border-top-color:var(--sl-blue);background:rgba(0,170,255,0.25);':''}"></div>
+        <div class="chart-day" style="color:${isToday?'var(--sl-blue)':'var(--sl-muted)'}">${days[i]}</div>
+      </div>`;
+    });
+  }
+
+  function renderHistory() {
+    const hl = document.getElementById('historyList');
+    if (!state.history.length) {
+      hl.innerHTML = '<div class="empty-history">クエストをクリアすると<br>ここに記録されます</div>';
+      return;
+    }
+    hl.innerHTML = state.history.map(h =>
+      `<div class="history-item">
+        <div><div class="history-date">${h.date}</div><div class="history-name">${h.name}</div></div>
+        <div class="history-exp-badge">+${h.exp} EXP</div>
+      </div>`
+    ).join('');
+  }
+
+  function renderAll() {
+    renderHeader();
+    renderQuests();
+    renderStats();
+    renderChart();
+    renderHistory();
+  }
+
+  // --- Actions ---
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  function gainExp(amount) {
+    state.exp += amount;
+    const todayIdx = (() => { const d = new Date().getDay(); return d===0?6:d-1; })();
+    state.weekActivity[todayIdx] = (state.weekActivity[todayIdx]||0) + 1;
+    while (state.exp >= state.expMax) {
+      state.exp -= state.expMax;
+      state.level++;
+      state.expMax = Math.round(state.expMax * 1.4);
+      Object.keys(state.stats).forEach(k => {
+        state.stats[k] += Math.floor(Math.random()*3)+1;
+      });
+      setTimeout(() => {
+        showToast('★ LEVEL UP!  Lv.'+state.level+' に上昇！');
+        renderAll();
+      }, 400);
+    }
+    saveState();
+    renderAll();
+  }
+
+  function completeQuest(idx, expReward, name) {
+    if (state.completed[idx]) return;
+    state.completed[idx] = true;
+    const now = new Date();
+    const dateStr = (now.getMonth()+1)+'/'+now.getDate();
+    state.history.unshift({ date: dateStr, name, exp: expReward });
+    saveState();
+    showToast('QUEST COMPLETE  +'+expReward+' EXP');
+    setTimeout(() => gainExp(expReward), 300);
+  }
+
+  function switchTab(id, btn) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-'+id).classList.add('active');
+    btn.classList.add('active');
+  }
+
+  // --- Init ---
+  renderAll();
+</script>
+</body>
+</html>
